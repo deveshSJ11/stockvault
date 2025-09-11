@@ -188,6 +188,14 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
+
+## What I Learned
+- Component-driven architecture for scalable React projects
+- State management and reusable UI patterns
+- Responsive and accessible web design
+- Git workflow for collaborative development
+- Real-time data handling (mocked or API)
+
 ## Acknowledgments
 
 - **React Team** - For the incredible framework
