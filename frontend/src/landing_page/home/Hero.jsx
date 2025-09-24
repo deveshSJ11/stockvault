@@ -1,11 +1,7 @@
 import React from 'react';
  function Hero() {
     return (
-<<<<<<< HEAD
-            
-=======
-       
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)
+
             <div className='row justify-content-center text-center '>
                 <div className=' col-md-8 mb-5' >
                     <img src='media/images/homeHero.png' alt='hero-image' className='hero-image mb-3'/>
@@ -21,7 +17,3 @@ import React from 'react';
 
 
 export default Hero;
-<<<<<<< HEAD
-
-=======
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)

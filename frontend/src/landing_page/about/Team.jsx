@@ -39,5 +39,7 @@ function Team() {
     </div>
   );
 }
+npm install
+npm run dev
 
 export default Team;

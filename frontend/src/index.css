@@ -4,13 +4,13 @@
   font-weight: 400;
 
   color-scheme: light dark;
-<<<<<<< HEAD
+
   color: #242424;
   background-color: rgba(255, 255, 255, 0.87);
-=======
+
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)
+
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,7 +30,7 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-<<<<<<< HEAD
+
    place-items: center;
   min-width: 320px;
   min-height: 100vh;
@@ -45,11 +45,11 @@ body {
   /* Add this to ensure your React app takes full width */
   width: 100%;
   min-height: 100vh;
-=======
+
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)
+
 }
 
 h1 {
@@ -76,7 +76,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-<<<<<<< HEAD
+
 .hero-image {
   max-width: 100%;
   height: auto;
@@ -84,8 +84,8 @@ button:focus-visible {
   margin: 0 auto;
 }
 
-=======
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)
+
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -98,7 +98,7 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-<<<<<<< HEAD
+
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
@@ -131,5 +131,3 @@ code {
   border-radius: 10px;
   border: none;
 }
-=======
->>>>>>> 23bd574 (Initial commit - project setup with Vite + React routing)
