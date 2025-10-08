@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// ✅ FIXED: Changed port from 5713 to 5712
-const API_BASE_URL = 'http://localhost:5712';
+const API_BASE_URL = import.meta.env.VITE_API_BASE;
+
+
 
 // Create axios instance with default config
 const api = axios.create({
