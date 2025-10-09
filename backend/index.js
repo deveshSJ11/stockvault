@@ -1,3 +1,5 @@
+ 
+
 require("dotenv").config();
 
 const express = require("express");
@@ -16,12 +18,16 @@ const {
   fetchLiveStockData 
 } = require('./services/StockService');
 
-const PORT = process.env.PORT || 3002; 
+const PORT = process.env.PORT || 5712; 
 const uri = process.env.MONGO_URL;
 
 const app = express();
 
 app.use(cors());
+app.get("/", (req, res) => {
+  res.send("🚀 StockVault Backend is running!");
+});
+
 app.use(bodyParser.json());
 
 // Auth Routes
