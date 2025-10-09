@@ -16,6 +16,69 @@ hr {
   height: 30px;
 }
 
+/* ==================== NOTIFICATION STYLES ==================== */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  animation: slideInRight 0.3s ease-out;
+  overflow: hidden;
+}
+
+.notification-success {
+  background: #e8f5e9;
+  border: 1px solid #4caf50;
+}
+
+.notification-error {
+  background: #ffebee;
+  border: 1px solid #f44336;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.notification-icon {
+  font-size: 18px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.notification-icon-success {
+  color: #4caf50;
+}
+
+.notification-icon-error {
+  color: #f44336;
+}
+
+.notification-message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.notification-progress {
+  height: 3px;
+  background: linear-gradient(90deg, transparent, currentColor);
+  animation: progress linear forwards;
+}
+
+.notification-success .notification-progress {
+  background: #4caf50;
+}
+
+.notification-error .notification-progress {
+  background: #f44336;
+}
+
 /* ==================== LAYOUT ==================== */
 .dashboard-container {
   width: 100%;
@@ -920,6 +983,10 @@ hr {
   animation: slideUp 0.3s ease-out;
 }
 
+.modal-content.confirm-modal {
+  max-width: 350px;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -978,6 +1045,13 @@ hr {
   border-color: #4184f3;
 }
 
+.modal-body p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+}
+
 .quick-amounts {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1013,6 +1087,20 @@ hr {
   padding: 10px 24px;
   font-size: 14px;
   font-weight: 500;
+}
+
+.btn-danger {
+  background: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #da190b;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ==================== COLOR UTILITIES ==================== */
@@ -1074,6 +1162,26 @@ hr {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
@@ -1083,6 +1191,7 @@ hr {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {

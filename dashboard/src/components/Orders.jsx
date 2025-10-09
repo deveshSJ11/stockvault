@@ -7,6 +7,8 @@ const Orders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [notification, setNotification] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   // Fetch orders
   const fetchOrders = async () => {
@@ -27,24 +29,23 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   // Handle delete order
   const handleDelete = async (orderId) => {
-    if (!window.confirm('Are you sure you want to delete this order?')) {
-      return;
-    }
-
     try {
       setDeletingId(orderId);
       await deleteOrder(orderId);
       
-      // Remove from state immediately for better UX
       setAllOrders(allOrders.filter(order => order._id !== orderId));
-      
-      // Show success message (optional)
-      alert('Order deleted successfully!');
+      setShowDeleteConfirm(null);
+      showNotification('Order deleted successfully!', 'success');
     } catch (err) {
       console.error('Error deleting order:', err);
-      alert('Failed to delete order. Please try again.');
+      showNotification('Failed to delete order. Please try again.', 'error');
     } finally {
       setDeletingId(null);
     }
@@ -98,118 +99,167 @@ const Orders = () => {
   const totalSellValue = sellOrders.reduce((sum, order) => sum + (order.price * order.qty), 0);
 
   return (
-    <div className="orders">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 className="title">Orders ({allOrders.length})</h3>
-        <button className="btn btn-sm btn-outline-primary btn-blue " onClick={fetchOrders}>
-          <i className="fa fa-refresh"></i> Refresh
-        </button>
-      </div>
-
-      {/* Order Statistics */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '15px', 
-        marginBottom: '25px' 
-      }}>
-        <div style={{ 
-          padding: '15px', 
-          backgroundColor: '#e7f3ff', 
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          <h5 style={{ color: '#0066cc', margin: 0 }}>{buyOrders.length}</h5>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Buy Orders</p>
-          <small style={{ color: '#666' }}>₹{totalBuyValue.toFixed(2)}</small>
+    <>
+      {notification && (
+        <div className={`notification notification-${notification.type}`}>
+          <div className="notification-content">
+            <span className={`notification-icon notification-icon-${notification.type}`}>
+              {notification.type === "success" ? "✓" : "!"}
+            </span>
+            <span className="notification-message">{notification.message}</span>
+          </div>
+          <div 
+            className="notification-progress" 
+            style={{ animationDuration: "3s" }}
+          ></div>
         </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Delete</h3>
+              <button className="close-btn" onClick={() => setShowDeleteConfirm(null)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this order?</p>
+              <p style={{ fontSize: '13px', color: '#999', marginTop: '12px' }}>
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-grey" 
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger"
+                onClick={() => handleDelete(showDeleteConfirm)}
+                disabled={deletingId === showDeleteConfirm}
+              >
+                {deletingId === showDeleteConfirm ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="orders">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 className="title">Orders ({allOrders.length})</h3>
+          <button className="btn btn-sm btn-outline-primary btn-blue" onClick={fetchOrders}>
+            <i className="fa fa-refresh"></i> Refresh
+          </button>
+        </div>
+
+        {/* Order Statistics */}
         <div style={{ 
-          padding: '15px', 
-          backgroundColor: '#fff3e0', 
-          borderRadius: '8px',
-          textAlign: 'center'
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+          gap: '15px', 
+          marginBottom: '25px' 
         }}>
-          <h5 style={{ color: '#ff9800', margin: 0 }}>{sellOrders.length}</h5>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Sell Orders</p>
-          <small style={{ color: '#666' }}>₹{totalSellValue.toFixed(2)}</small>
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#e7f3ff', 
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <h5 style={{ color: '#0066cc', margin: 0 }}>{buyOrders.length}</h5>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Buy Orders</p>
+            <small style={{ color: '#666' }}>₹{totalBuyValue.toFixed(2)}</small>
+          </div>
+          <div style={{ 
+            padding: '15px', 
+            backgroundColor: '#fff3e0', 
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            <h5 style={{ color: '#ff9800', margin: 0 }}>{sellOrders.length}</h5>
+            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Sell Orders</p>
+            <small style={{ color: '#666' }}>₹{totalSellValue.toFixed(2)}</small>
+          </div>
+        </div>
+
+        {/* Orders Table */}
+        <div className="order-table">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Stock</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Total Value</th>
+                <th>Type</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allOrders.map((order, index) => {
+                const totalValue = order.price * order.qty;
+                const isBuy = order.mode === 'BUY';
+                const modeClass = isBuy ? 'profit' : 'loss';
+
+                return (
+                  <tr key={order._id}>
+                    <td>{index + 1}</td>
+                    <td style={{ fontWeight: 'bold' }}>{order.name}</td>
+                    <td>{order.qty}</td>
+                    <td>₹{order.price.toFixed(2)}</td>
+                    <td>₹{totalValue.toFixed(2)}</td>
+                    <td>
+                      <span 
+                        className={modeClass}
+                        style={{ 
+                          padding: '4px 12px', 
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {order.mode}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-danger btn-outline-primary btn-blue"
+                        onClick={() => setShowDeleteConfirm(order._id)}
+                        disabled={deletingId === order._id}
+                        style={{ 
+                          padding: '4px 12px',
+                          fontSize: '12px'
+                        }}
+                      >
+                        {deletingId === order._id ? (
+                          <>
+                            <i className="fa fa-spinner fa-spin"></i> Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa fa-trash"></i> Delete
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Add Order Button */}
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <Link to={"/"} className="btn btn-primary">
+            <i className="fa fa-plus"></i> Place New Order
+          </Link>
         </div>
       </div>
-
-      {/* Orders Table */}
-      <div className="order-table">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Stock</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Total Value</th>
-              <th>Type</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allOrders.map((order, index) => {
-              const totalValue = order.price * order.qty;
-              const isBuy = order.mode === 'BUY';
-              const modeClass = isBuy ? 'profit' : 'loss';
-
-              return (
-                <tr key={order._id}>
-                  <td>{index + 1}</td>
-                  <td style={{ fontWeight: 'bold' }}>{order.name}</td>
-                  <td>{order.qty}</td>
-                  <td>₹{order.price.toFixed(2)}</td>
-                  <td>₹{totalValue.toFixed(2)}</td>
-                  <td>
-                    <span 
-                      className={modeClass}
-                      style={{ 
-                        padding: '4px 12px', 
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      {order.mode}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-danger btn-outline-primary btn-blue"
-                      onClick={() => handleDelete(order._id)}
-                      disabled={deletingId === order._id}
-                      style={{ 
-                        padding: '4px 12px',
-                        fontSize: '12px'
-                      }}
-                    >
-                      {deletingId === order._id ? (
-                        <>
-                          <i className="fa fa-spinner fa-spin"></i> Deleting...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fa fa-trash"></i> Delete
-                        </>
-                      )}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Add Order Button */}
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <Link to={"/"} className="btn btn-primary">
-          <i className="fa fa-plus"></i> Place New Order
-        </Link>
-      </div>
-    </div>
+    </>
   );
 };
 

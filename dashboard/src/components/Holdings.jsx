@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import React, { useState, useEffect, useMemo } from "react";
 import { getAllHoldings } from "../services/ApiService";
 import { VerticalGraph } from "./VerticalGraph";
 
@@ -12,15 +13,12 @@ const Holdings = () => {
   // Fetch holdings data
   const fetchHoldings = async (showRefreshIndicator = false) => {
     try {
-      if (showRefreshIndicator) {
-        setIsRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      if (showRefreshIndicator) setIsRefreshing(true);
+      else setLoading(true);
+
       setError(null);
 
       const data = await getAllHoldings();
-      // Ensure numeric values
       const safeData = data.map((stock) => ({
         name: stock.name || "-",
         qty: Number(stock.qty) || 0,
@@ -42,39 +40,34 @@ const Holdings = () => {
   };
 
   // Initial fetch + auto-refresh
-  useEffect(() => {
-    const fetchData = async () => await fetchHoldings();
-    fetchData();
+// Initial fetch + auto-refresh every 5 seconds
+useEffect(() => {
+  fetchHoldings();
+  const interval = setInterval(() => fetchHoldings(true), 5 * 1000); // 5 seconds
+  return () => clearInterval(interval);
+}, []);
 
-    const interval = setInterval(() => fetchHoldings(true), 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
-  // Manual refresh
   const handleRefresh = () => fetchHoldings(true);
 
-  // Calculate totals dynamically
+  // Totals
   const totalInvestment = allHoldings.reduce(
     (acc, stock) => acc + stock.avg * stock.qty,
     0
   );
-
   const totalCurrentValue = allHoldings.reduce(
     (acc, stock) => acc + stock.price * stock.qty,
     0
   );
-
   const totalPnL = totalCurrentValue - totalInvestment;
   const totalPnLPercent =
     totalInvestment > 0
       ? ((totalPnL / totalInvestment) * 100).toFixed(2)
       : 0;
 
-  // Prepare data for chart
-  const labels = allHoldings.map((stock) => stock.name);
-
-  const chartData = {
-    labels,
+  // Chart data
+  const chartData = useMemo(() => ({
+    labels: allHoldings.map((stock) => stock.name),
     datasets: [
       {
         label: "Current Value (₹)",
@@ -91,20 +84,19 @@ const Holdings = () => {
         borderWidth: 1,
       },
     ],
-  };
+  }), [allHoldings]);
 
-  // Format last updated
+  // Last updated format
   const formatLastUpdated = () => {
     if (!lastUpdated) return "";
     const now = new Date();
     const diff = Math.floor((now - lastUpdated) / 1000);
-
     if (diff < 60) return `Updated ${diff}s ago`;
     if (diff < 3600) return `Updated ${Math.floor(diff / 60)}m ago`;
     return `Updated at ${lastUpdated.toLocaleTimeString()}`;
   };
 
-  // Loading state
+  // Loading state with message
   if (loading && allHoldings.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
@@ -121,10 +113,7 @@ const Holdings = () => {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
         <div style={{ color: "#d9534f", marginBottom: "20px" }}>
-          <i
-            className="fa fa-exclamation-circle"
-            style={{ fontSize: "48px" }}
-          ></i>
+          <i className="fa fa-exclamation-circle" style={{ fontSize: "48px" }}></i>
         </div>
         <h4>{error}</h4>
         <button className="btn btn-primary btn-blue" onClick={() => fetchHoldings()}>
@@ -136,6 +125,7 @@ const Holdings = () => {
 
   return (
     <>
+      {/* Header + Refresh */}
       <div
         style={{
           display: "flex",
@@ -149,76 +139,70 @@ const Holdings = () => {
           <span style={{ fontSize: "12px", color: "#666" }}>
             {formatLastUpdated()}
           </span>
-          <button
-            className="btn btn-sm btn-outline-primary btn-blue "
+          {/* <button
+            className="btn btn-sm btn-outline-primary btn-blue"
             onClick={handleRefresh}
             disabled={isRefreshing}
             style={{ display: "flex", alignItems: "center", gap: "5px" }}
           >
             <i className={`fa fa-refresh ${isRefreshing ? "fa-spin" : ""}`}></i>
             {isRefreshing ? "Refreshing..." : "Refresh"}
-          </button>
+          </button> */}
         </div>
       </div>
 
-      {/* Chart Section */}
-      {allHoldings.length > 0 && (
-        <div
-          className="chart-container"
-          style={{
-            marginBottom: "30px",
-            padding: "20px",
-            backgroundColor: "#fff",
-            borderRadius: "8px",
-          }}
-        >
-          <VerticalGraph data={chartData} />
+      {/* Scrollable Chart + Table */}
+      <div style={{ overflowY: "auto", maxHeight: "70vh", paddingRight: "10px" }}>
+        {allHoldings.length > 0 && (
+          <div className="fade-in-chart">
+            <VerticalGraph key={allHoldings.length} data={chartData} />
+          </div>
+        )}
+
+        <div className="order-table" style={{ marginTop: "20px" }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Instrument</th>
+                <th>Qty.</th>
+                <th>Avg. cost</th>
+                <th>LTP</th>
+                <th>Cur. val</th>
+                <th>P&L</th>
+                <th>Net chg.</th>
+                <th>Day chg.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allHoldings.map((stock, index) => {
+                const curValue = stock.price * stock.qty;
+                const investment = stock.avg * stock.qty;
+                const pnl = curValue - investment;
+                const isProfit = pnl >= 0.0;
+                const profClass = isProfit ? "profit" : "loss";
+                const dayClass =
+                  stock.day && stock.day.startsWith("+") ? "profit" : "loss";
+
+                return (
+                  <tr key={index}>
+                    <td>{stock.name}</td>
+                    <td>{stock.qty}</td>
+                    <td>{stock.avg.toFixed(2)}</td>
+                    <td>{stock.price.toFixed(2)}</td>
+                    <td>{curValue.toFixed(2)}</td>
+                    <td className={profClass}>{pnl.toFixed(2)}</td>
+                    <td className={profClass}>{stock.net}</td>
+                    <td className={dayClass}>{stock.day}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
-
-      {/* Holdings Table */}
-      <div className="order-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Instrument</th>
-              <th>Qty.</th>
-              <th>Avg. cost</th>
-              <th>LTP</th>
-              <th>Cur. val</th>
-              <th>P&L</th>
-              <th>Net chg.</th>
-              <th>Day chg.</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allHoldings.map((stock, index) => {
-              const curValue = stock.price * stock.qty;
-              const investment = stock.avg * stock.qty;
-              const pnl = curValue - investment;
-              const isProfit = pnl >= 0.0;
-              const profClass = isProfit ? "profit" : "loss";
-              const dayClass = stock.day && stock.day.startsWith("+") ? "profit" : "loss";
-
-              return (
-                <tr key={index}>
-                  <td>{stock.name}</td>
-                  <td>{stock.qty}</td>
-                  <td>{stock.avg.toFixed(2)}</td>
-                  <td>{stock.price.toFixed(2)}</td>
-                  <td>{curValue.toFixed(2)}</td>
-                  <td className={profClass}>{pnl.toFixed(2)}</td>
-                  <td className={profClass}>{stock.net}</td>
-                  <td className={dayClass}>{stock.day}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
       </div>
 
       {/* Summary Section */}
-      <div className="row">
+      <div className="row" style={{ marginTop: "20px" }}>
         <div className="col">
           <h5>
             {totalInvestment.toFixed(0).split(".")[0]}.

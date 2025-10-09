@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 
+
 const Funds = () => {
   const [showAddFunds, setShowAddFunds] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -10,13 +11,21 @@ const Funds = () => {
   const [usedMargin] = useState(3757.30);
   const [openingBalance] = useState(4043.10);
   const [payin, setPayin] = useState(4064.00);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   const handleAddFunds = () => {
     setShowAddFunds(true);
+    setAmount("");
   };
 
   const handleWithdraw = () => {
     setShowWithdraw(true);
+    setAmount("");
   };
 
   const handleCloseModal = () => {
@@ -30,15 +39,20 @@ const Funds = () => {
     const fundAmount = parseFloat(amount);
     
     if (!amount || fundAmount <= 0) {
-      alert("Please enter a valid amount");
+      showNotification("Please enter a valid amount", "error");
       return;
     }
 
-    // Update the available margin and payin
-    setAvailableMargin(prev => prev + fundAmount);
-    setPayin(prev => prev + fundAmount);
+    const newMargin = availableMargin + fundAmount;
+    const newPayin = payin + fundAmount;
+
+    setAvailableMargin(newMargin);
+    setPayin(newPayin);
     
-    alert(`₹${fundAmount.toFixed(2)} added to your account!\n\nYour new available margin: ₹${(availableMargin + fundAmount).toFixed(2)}\n\nNote: This is a demo. In production, integrate with payment gateway.`);
+    showNotification(
+      `₹${fundAmount.toFixed(2)} added successfully! New available margin: ₹${newMargin.toFixed(2)}`,
+      "success"
+    );
     handleCloseModal();
   };
 
@@ -47,29 +61,55 @@ const Funds = () => {
     const withdrawAmount = parseFloat(amount);
     
     if (!amount || withdrawAmount <= 0) {
-      alert("Please enter a valid amount");
+      showNotification("Please enter a valid amount", "error");
       return;
     }
 
     if (withdrawAmount > availableMargin) {
-      alert(`Insufficient funds. Available margin: ₹${availableMargin.toFixed(2)}`);
+      showNotification(
+        `Insufficient funds. Available margin: ₹${availableMargin.toFixed(2)}`,
+        "error"
+      );
       return;
     }
 
-    // Update the available margin and payin
-    setAvailableMargin(prev => prev - withdrawAmount);
-    setPayin(prev => prev - withdrawAmount);
+    const newMargin = availableMargin - withdrawAmount;
+    const newPayin = payin - withdrawAmount;
 
-    alert(`₹${withdrawAmount.toFixed(2)} withdrawal initiated!\n\nYour new available margin: ₹${(availableMargin - withdrawAmount).toFixed(2)}\n\nNote: This is a demo. In production, process through bank.`);
+    setAvailableMargin(newMargin);
+    setPayin(newPayin);
+
+    showNotification(
+      `₹${withdrawAmount.toFixed(2)} withdrawal initiated! New available margin: ₹${newMargin.toFixed(2)}`,
+      "success"
+    );
     handleCloseModal();
   };
 
   const handleOpenCommodity = () => {
-    alert("Opening commodity account...\n\nNote: This is a demo feature. In production, this would redirect to account opening form.");
+    showNotification(
+      "Redirecting to account opening form. This is a demo feature.",
+      "success"
+    );
   };
 
   return (
     <>
+      {notification && (
+        <div className={`notification notification-${notification.type}`}>
+          <div className="notification-content">
+            <span className={`notification-icon notification-icon-${notification.type}`}>
+              {notification.type === "success" ? "✓" : "!"}
+            </span>
+            <span className="notification-message">{notification.message}</span>
+          </div>
+          <div 
+            className="notification-progress" 
+            style={{ animationDuration: "3s" }}
+          ></div>
+        </div>
+      )}
+
       <div className="funds">
         <p>Instant, zero-cost fund transfers with UPI</p>
         <button className="btn btn-green" onClick={handleAddFunds}>
@@ -247,6 +287,5 @@ const Funds = () => {
     </>
   );
 };
-
 
 export default Funds;

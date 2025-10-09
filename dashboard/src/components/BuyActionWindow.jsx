@@ -10,8 +10,10 @@ const BuyActionWindow = ({ uid }) => {
   const [stockPrice, setStockPrice] = useState("");
   const [livePrice, setLivePrice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState(null); // Track which button is loading
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [error, setError] = useState(null);
+  const [notification, setNotification] = useState(null);
 
   const { closeBuyWindow } = useContext(GeneralContext);
 
@@ -47,7 +49,6 @@ const BuyActionWindow = ({ uid }) => {
 
   const handleQuantityChange = (e) => {
     const value = e.target.value;
-    // Allow empty string or valid positive numbers
     if (value === "" || /^\d+$/.test(value)) {
       setStockQuantity(value);
     }
@@ -55,10 +56,14 @@ const BuyActionWindow = ({ uid }) => {
 
   const handlePriceChange = (e) => {
     const value = e.target.value;
-    // Allow empty string or valid decimal numbers
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setStockPrice(value);
     }
+  };
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
   };
 
   const handleOrder = async (mode) => {
@@ -66,11 +71,11 @@ const BuyActionWindow = ({ uid }) => {
     const price = parseFloat(stockPrice);
 
     if (!stockQuantity || qty <= 0) {
-      alert("Please enter a valid quantity");
+      showNotification("Please enter a valid quantity", "error");
       return;
     }
     if (!stockPrice || price <= 0) {
-      alert("Please enter a valid price");
+      showNotification("Please enter a valid price", "error");
       return;
     }
 
@@ -83,14 +88,20 @@ const BuyActionWindow = ({ uid }) => {
         mode,
       });
       
-      // Close window first, then show success message
-      closeBuyWindow();
+      // FIX: Show notification BEFORE closing window
+      const totalValue = (qty * price).toFixed(2);
+      showNotification(
+        `${mode} order placed successfully! ${qty} shares of ${uid} at ₹${price.toFixed(2)} (Total: ₹${totalValue})`,
+        "success"
+      );
+      
+      // Close window after a short delay to show notification
       setTimeout(() => {
-        alert(`${mode} order placed successfully!`);
-      }, 100);
+        closeBuyWindow();
+      }, 1500);
     } catch (err) {
       console.error(`Error placing ${mode} order:`, err);
-      alert("Failed to place order. Please try again.");
+      showNotification("Failed to place order. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -105,78 +116,90 @@ const BuyActionWindow = ({ uid }) => {
   const marginRequired = (qty * price).toFixed(2);
 
   return (
-    <div className="container" id="buy-window">
-      <div className="header">
-        <h3>
-          {uid} <span>NSE</span>
-        </h3>
-        {livePrice !== null && (
-          <div style={{ fontSize: "14px", color: "#fff", marginTop: "5px" }}>
-            Live Price: ₹{livePrice.toFixed(2)}
+    <>
+      {notification && (
+        <div className={`notification notification-${notification.type}`}>
+          <div className="notification-content">
+            <span className={`notification-icon notification-icon-${notification.type}`}>
+              {notification.type === "success" ? "✓" : "!"}
+            </span>
+            <span className="notification-message">{notification.message}</span>
           </div>
-        )}
-        {error && <div style={{ color: "#ffcccc", fontSize: "13px" }}>{error}</div>}
-      </div>
+          <div 
+            className="notification-progress" 
+            style={{ animationDuration: "3s" }}
+          ></div>
+        </div>
+      )}
 
-      <div className="regular-order">
-        <div className="inputs">
-          <fieldset>
-            <legend>Qty.</legend>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={stockQuantity}
-              onChange={handleQuantityChange}
+      <div className="container" id="buy-window">
+        <div className="header">
+          <h3>
+            {uid} <span>NSE</span>
+          </h3>
+          {livePrice !== null && (
+            <div style={{ fontSize: "14px", color: "#fff", marginTop: "5px" }}>
+              Live Price: ₹{livePrice.toFixed(2)}
+            </div>
+          )}
+          {error && <div style={{ color: "#ffcccc", fontSize: "13px" }}>{error}</div>}
+        </div>
+
+        <div className="regular-order">
+          <div className="inputs">
+            <fieldset>
+              <legend>Qty.</legend>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={stockQuantity}
+                onChange={handleQuantityChange}
+                disabled={loading}
+                placeholder="0"
+              />
+            </fieldset>
+            <fieldset>
+              <legend>Price</legend>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={stockPrice}
+                onChange={handlePriceChange}
+                disabled={loading}
+                placeholder="0.00"
+              />
+            </fieldset>
+          </div>
+        </div>
+
+        <div className="buttons">
+          <span>Margin required ₹{marginRequired}</span>
+          <div className="button-group">
+            <button
+              className="btn btn-blue"
+              onClick={handleBuyClick}
               disabled={loading}
-              placeholder="0"
-            />
-          </fieldset>
-          <fieldset>
-            <legend>Price</legend>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={stockPrice}
-              onChange={handlePriceChange}
+            >
+              {loading ? "Processing..." : "Buy"}
+            </button>
+            <button
+              className="btn btn-sell"
+              onClick={handleSellClick}
               disabled={loading}
-              placeholder="0.00"
-            />
-          </fieldset>
+            >
+              {loading ? "Processing..." : "Sell"}
+            </button>
+            <button
+              className="btn btn-grey"
+              onClick={handleCancelClick}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </div>
-
-      <div className="buttons">
-        <span>Margin required ₹{marginRequired}</span>
-        <div>
-          <button
-            className="btn btn-blue"
-            onClick={handleBuyClick}
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Buy"}
-          </button>
-          <button
-            className="btn"
-            style={{
-              backgroundColor: "#ff5722",
-              color: "white",
-              margin: "0 10px",
-            }}
-            onClick={handleSellClick}
-            disabled={loading}
-          >
-            {loading ? "Processing..." : "Sell"}
-          </button>
-          <button
-            className="btn btn-grey"
-            onClick={handleCancelClick}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };
 
