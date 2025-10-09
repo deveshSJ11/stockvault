@@ -224,37 +224,36 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 20px 16px;
   background-color: #fff;
   border-top: 1px solid #eee;
 }
 
-.buttons > span {
+.buttons span {
   font-size: 0.8rem;
   color: #666;
 }
 
-/* FIX: Keep button-group compact and prevent expansion */
+/* FIX: Keep button-group together and centered */
 .button-group {
   display: flex;
   gap: 8px;
+  justify-content: center;
   flex-wrap: nowrap;
-  justify-content: flex-start;
 }
 
 .btn {
   border: none;
-  padding: 10px 20px;
+  padding: 8px 20px;
   border-radius: 2px;
   color: #fff;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s;
   white-space: nowrap;
   flex: 0 0 auto;
-  min-width: 80px;
-  text-align: center;
+  min-width: 70px;
 }
 
 .btn-blue {
@@ -263,10 +262,6 @@
 
 .btn-blue:hover:not(:disabled) {
   background: #5a95f5;
-}
-
-.btn-blue:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 .btn-sell {
@@ -278,10 +273,6 @@
   background: #f4511e;
 }
 
-.btn-sell:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
 .btn-grey {
   background: #d4d4d4;
   color: #666666;
@@ -290,10 +281,6 @@
 .btn-grey:hover:not(:disabled) {
   background: #bbb;
   color: #fff;
-}
-
-.btn-grey:active:not(:disabled) {
-  transform: scale(0.98);
 }
 
 .btn:disabled {
