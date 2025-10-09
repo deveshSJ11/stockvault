@@ -71,7 +71,7 @@ const Orders = () => {
           <i className="fa fa-exclamation-circle" style={{ fontSize: '48px' }}></i>
         </div>
         <h4>{error}</h4>
-        <button className="btn btn-primary" onClick={fetchOrders}>
+        <button className="btn btn-primary .bth-blue" onClick={fetchOrders}>
           Retry
         </button>
       </div>
