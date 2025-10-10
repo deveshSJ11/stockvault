@@ -64,6 +64,7 @@
     "safe-buffer": "^5.2.1",
     "safer-buffer": "^2.1.2",
     "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
     "statuses": "^2.0.1",
     "supports-color": "^5.5.0",
     "type-is": "^1.6.18",
