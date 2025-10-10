@@ -1,85 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { io } from "socket.io-client";
+import React, { useState } from "react";
+import { useSocket } from "../hooks/useSocket";
 
 const Positions = () => {
   const [allPositions, setAllPositions] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState("connecting");
 
-  useEffect(() => {
-    // Get backend URL from environment variable (use SOCKET_URL or fallback to API_BASE)
-    const backendUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE;
-    
-    if (!backendUrl) {
-      console.error("❌ VITE_API_BASE or VITE_SOCKET_URL is not defined. Check your .env file");
-      setConnectionStatus("error");
-      return;
-    }
+  // Use custom hook to get live positions
+  const { status: connectionStatus } = useSocket("updatePositions", (data) => {
+    setAllPositions(data);
+    setLastUpdated(new Date());
+  });
 
-    console.log("🔌 Connecting to Socket.IO at:", backendUrl);
-
-    // Connect to backend Socket.IO with production-ready configuration
-    const socket = io(backendUrl, {
-      path: '/socket.io',
-      transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-      timeout: 20000,
-      autoConnect: true,
-      withCredentials: true,
-      forceNew: false,
-      upgrade: true
-    });
-
-    // Connection events
-    socket.on("connect", () => {
-      console.log("✅ Socket.IO connected for Positions | ID:", socket.id);
-      console.log("🔌 Transport:", socket.io.engine.transport.name);
-      setConnectionStatus("connected");
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.log("🔌 Socket.IO disconnected from Positions | Reason:", reason);
-      setConnectionStatus("disconnected");
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("❌ Socket.IO connection error:", error);
-      console.log("Current transport:", socket.io.engine?.transport?.name || 'none');
-      setConnectionStatus("error");
-    });
-
-    socket.on("reconnect_attempt", (attemptNumber) => {
-      console.log(`🔄 Reconnection attempt ${attemptNumber}...`);
-      setConnectionStatus("reconnecting");
-    });
-
-    socket.on("reconnect", (attemptNumber) => {
-      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
-      setConnectionStatus("connected");
-    });
-
-    // Listen for transport upgrade
-    socket.io.engine.on("upgrade", (transport) => {
-      console.log("⬆️ Transport upgraded to:", transport.name);
-    });
-
-    // Listen for live position updates
-    socket.on("updatePositions", (data) => {
-      console.log("📊 Positions updated via Socket.IO:", data.length, "positions");
-      setAllPositions(data);
-      setLastUpdated(new Date());
-    });
-
-    // Cleanup on unmount
-    return () => {
-      console.log("🔌 Disconnecting Socket.IO for Positions");
-      socket.disconnect();
-    };
-  }, []);
-
+  // Format last updated time
   const formatLastUpdated = () => {
     if (!lastUpdated) return '';
     const now = new Date();
@@ -116,7 +48,7 @@ const Positions = () => {
     return sum + (stock.price - stock.avg) * stock.qty;
   }, 0);
 
-  // Show loading state
+  // Loading or reconnecting
   if (connectionStatus === "connecting" || connectionStatus === "reconnecting") {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
@@ -135,7 +67,7 @@ const Positions = () => {
     );
   }
 
-  // Show error state
+  // Error state when no data
   if (connectionStatus === "error" && !allPositions.length) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
@@ -155,7 +87,7 @@ const Positions = () => {
     );
   }
 
-  // Show empty state
+  // Empty state
   if (!allPositions.length && connectionStatus === "connected") {
     return (
       <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>

@@ -18,3 +18,4 @@ frontend:
 env:
   variables:
     VITE_API_BASE: "https://stockvault-backend-env.eba-f37mvakq.ap-south-1.elasticbeanstalk.com"
+    VITE_SOCKET_URL: "https://stockvault-backend-env.eba-f37mvakq.ap-south-1.elasticbeanstalk.com"
