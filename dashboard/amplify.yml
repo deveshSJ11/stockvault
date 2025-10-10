@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+env:
+  variables:
+    VITE_API_BASE: "https://stockvault-backend-env.eba-f37mvakq.ap-south-1.elasticbeanstalk.com"
