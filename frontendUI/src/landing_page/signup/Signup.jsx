@@ -185,20 +185,23 @@ const Signup = () => {
             )}
           </div>
 
-          <button 
-            type="submit" 
-            className="btn-signup" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                Creating Account...
-              </>
-            ) : (
-              'Create Account'
-            )}
-          </button>
+          <a href="https://main.d39p45abwbdyp1.amplifyapp.com/">
+  <button
+    type="button"
+    className="btn-signup"
+    disabled={isLoading}
+  >
+    {isLoading ? (
+      <>
+        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Creating Account...
+      </>
+    ) : (
+      "Create Account"
+    )}
+  </button>
+</a>
+
         </form>
 
         <div className="signup-footer">

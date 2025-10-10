@@ -25,7 +25,7 @@ function Awards() {
               Start Trading Demo <i className="fas fa-arrow-right ms-2"></i>
             </Link>
 
-            <Link to="/dashboard" className="btn btn-outline-primary btn-lg px-3 py-2 mt-4">
+            <Link to="https://main.d39p45abwbdyp1.amplifyapp.com/" className="btn btn-outline-primary btn-lg px-3 py-2 mt-4">
               View Dashboard <i className="fas fa-arrow-right ms-2"></i>
             </Link>
           </div>

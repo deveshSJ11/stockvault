@@ -71,7 +71,7 @@ const Login = () => {
         alert('Login successful!');
         
         // Redirect to dashboard
-       window.location.href = 'http://localhost:5173/';
+       window.location.href = 'https://main.d31wkgvjp4a2zm.amplifyapp.com/';
       }
     } catch (error) {
       if (error.response && error.response.data) {

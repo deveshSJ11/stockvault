@@ -34,10 +34,10 @@ function Footer() {
           <div className="col-6 col-md-2 mb-4">
             <h6 className="fw-bold mb-3" style={{ color: "#14b8a6" }}>Features</h6>
             <ul className="list-unstyled">
-              <li className="mb-2"><a href="#dashboard" className="text-muted text-decoration-none small">Dashboard</a></li>
-              <li className="mb-2"><a href="#portfolio" className="text-muted text-decoration-none small">Portfolio</a></li>
-              <li className="mb-2"><a href="#charts" className="text-muted text-decoration-none small">Charts</a></li>
-              <li className="mb-2"><a href="#watchlist" className="text-muted text-decoration-none small">Watchlist</a></li>
+              <li className="mb-2"><a href="/login" className="text-muted text-decoration-none small">Dashboard</a></li>
+              <li className="mb-2"><a href="https://main.d39p45abwbdyp1.amplifyapp.com/" className="text-muted text-decoration-none small">Portfolio</a></li>
+              <li className="mb-2"><a href="https://main.d39p45abwbdyp1.amplifyapp.com/holdings" className="text-muted text-decoration-none small">Charts</a></li>
+              <li className="mb-2"><a href="https://main.d39p45abwbdyp1.amplifyapp.com/apps" className="text-muted text-decoration-none small">Watchlist</a></li>
             </ul>
           </div>
 
