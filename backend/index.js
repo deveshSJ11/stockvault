@@ -16,18 +16,45 @@ const {
 const PORT = process.env.PORT || 5712;
 const MONGO_URI = process.env.MONGO_URL;
 
+// Get allowed origins from environment or use defaults
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://main.d31wkgvjp4a2zm.amplifyapp.com'
+    ];
+
+console.log('CORS ALLOWED_ORIGINS:', ALLOWED_ORIGINS);
+
 const app = express();
 
 // ==============================
 // Middleware
 // ==============================
 app.use(cors({
-  origin: "https://main.d31wkgvjp4a2zm.amplifyapp.com",
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('No origin provided - allowing request');
+      return callback(null, true);
+    }
+    
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      console.log('CORS allowed for origin:', origin);
+      callback(null, true);
+    } else {
+      console.warn('CORS rejected for origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.use(express.json()); // replaces body-parser
+app.use(express.json());
+
 app.get("/", (req, res) => res.send("🚀 StockVault Backend is running!"));
 
 // ==============================
@@ -142,50 +169,61 @@ app.get("/health", (req, res) => {
 });
 
 // ==============================
-// START SERVER AFTER DB CONNECTION
+// START SERVER IMMEDIATELY (Don't wait for DB)
 // ==============================
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("✅ Database connected successfully!");
+const http = require("http");
+const { Server } = require("socket.io");
 
-    const http = require("http");
-    const { Server } = require("socket.io");
-
-    const server = http.createServer(app);
-    const io = new Server(server, {
+const server = http.createServer(app);
+const io = new Server(server, {
   cors: {
-    origin: "https://main.d31wkgvjp4a2zm.amplifyapp.com",
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"]
   }
 });
 
+// Emit live holdings every 5 seconds
+setInterval(async () => {
+  try {
+    const liveHoldings = await getLiveHoldings();
+    io.emit("updateHoldings", liveHoldings);
+  } catch (error) {
+    console.error("Socket error (holdings):", error);
+  }
+}, 5000);
 
-    // Emit live holdings every 5 seconds
-    setInterval(async () => {
-      try {
-        const liveHoldings = await getLiveHoldings();
-        io.emit("updateHoldings", liveHoldings);
-      } catch (error) {
-        console.error("Socket error (holdings):", error);
-      }
-    }, 5000);
+// Emit live positions every 5 seconds
+setInterval(async () => {
+  try {
+    const livePositions = await getLivePositions();
+    io.emit("updatePositions", livePositions);
+  } catch (error) {
+    console.error("Socket error (positions):", error);
+  }
+}, 5000);
 
-    // Emit live positions every 5 seconds
-    setInterval(async () => {
-      try {
-        const livePositions = await getLivePositions();
-        io.emit("updatePositions", livePositions);
-      } catch (error) {
-        console.error("Socket error (positions):", error);
-      }
-    }, 5000);
+// Start server without waiting for DB
+server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 
-    server.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+// Connect to MongoDB asynchronously (don't block startup)
+mongoose
+  .connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log("✅ Database connected successfully!");
   })
   .catch((err) => {
-    console.error("❌ Database connection error:", err);
-    process.exit(1);
+    console.error("⚠️ Database connection error (app will run without DB for read-only operations):", err.message);
+    // Don't exit - app can still serve read-only endpoints
   });
 
 // ==============================
