@@ -104,10 +104,9 @@ app.use("/api/auth", authRoutes);
 // ==============================
 // LIVE DATA ROUTES (REST Fallback)
 // ==============================
-// ADD THESE ALIAS ROUTES
-app.get("/holdings", async (req, res) => {
+app.get("/allHoldings", async (req, res) => {
   try {
-    console.log('📊 Fetching holdings via /holdings (alias)...');
+    console.log('📊 Fetching holdings via REST...');
     const liveHoldings = await getLiveHoldings();
     res.json(liveHoldings);
   } catch (error) {
@@ -116,9 +115,9 @@ app.get("/holdings", async (req, res) => {
   }
 });
 
-app.get("/positions", async (req, res) => {
+app.get("/allPositions", async (req, res) => {
   try {
-    console.log('📊 Fetching positions via /positions (alias)...');
+    console.log('📊 Fetching positions via REST...');
     const livePositions = await getLivePositions();
     res.json(livePositions);
   } catch (error) {
