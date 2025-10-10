@@ -3,17 +3,18 @@ frontend:
   phases:
     preBuild:
       commands:
+        - cd dashboard
         - npm ci
     build:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: dist
+    baseDirectory: dashboard/dist
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - dashboard/node_modules/**/*
 env:
   variables:
     VITE_API_BASE: "https://stockvault-backend-env.eba-f37mvakq.ap-south-1.elasticbeanstalk.com"

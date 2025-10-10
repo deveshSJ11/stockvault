@@ -11,11 +11,11 @@ const Holdings = () => {
   const [connectionStatus, setConnectionStatus] = useState("connecting");
 
   useEffect(() => {
-    // Get backend URL from environment variable
-    const backendUrl = import.meta.env.VITE_API_BASE;
+    // Get backend URL from environment variable (use SOCKET_URL or fallback to API_BASE)
+    const backendUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE;
     
     if (!backendUrl) {
-      console.error("VITE_API_BASE is not defined. Check your .env file");
+      console.error("❌ VITE_API_BASE or VITE_SOCKET_URL is not defined. Check your .env file");
       setConnectionStatus("error");
       setError("Configuration error: Backend URL not found");
       setLoading(false);
@@ -24,38 +24,62 @@ const Holdings = () => {
 
     console.log("🔌 Connecting to Socket.IO at:", backendUrl);
 
-    // Connect to backend Socket.IO
+    // Connect to backend Socket.IO with production-ready configuration
     const socket = io(backendUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5,
-      transports: ['websocket', 'polling']
+      timeout: 20000,
+      autoConnect: true,
+      withCredentials: true,
+      forceNew: false,
+      upgrade: true
     });
 
     // Connection events
     socket.on("connect", () => {
-      console.log("✅ Socket.IO connected for Holdings");
+      console.log("✅ Socket.IO connected for Holdings | ID:", socket.id);
+      console.log("🔌 Transport:", socket.io.engine.transport.name);
       setConnectionStatus("connected");
       setLoading(false);
       setError(null);
     });
 
-    socket.on("disconnect", () => {
-      console.log("❌ Socket.IO disconnected from Holdings");
+    socket.on("disconnect", (reason) => {
+      console.log("🔌 Socket.IO disconnected from Holdings | Reason:", reason);
       setConnectionStatus("disconnected");
     });
 
     socket.on("connect_error", (err) => {
       console.error("❌ Socket.IO connection error:", err);
+      console.log("Current transport:", socket.io.engine?.transport?.name || 'none');
       setConnectionStatus("error");
-      setError("Failed to connect to live data server");
+      setError(`Connection failed: ${err.message}`);
       setLoading(false);
+    });
+
+    socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}...`);
+      setConnectionStatus("reconnecting");
+    });
+
+    socket.on("reconnect", (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+      setConnectionStatus("connected");
+      setError(null);
+    });
+
+    // Listen for transport upgrade (websocket -> polling or vice versa)
+    socket.io.engine.on("upgrade", (transport) => {
+      console.log("⬆️ Transport upgraded to:", transport.name);
     });
 
     // Listen for live holdings updates (emitted every 5 seconds from backend)
     socket.on("updateHoldings", (data) => {
-      console.log("📊 Holdings updated via Socket.IO:", data);
+      console.log("📊 Holdings updated via Socket.IO:", data.length, "stocks");
       
       // Transform and validate data
       const safeData = data.map((stock) => ({
@@ -130,6 +154,29 @@ const Holdings = () => {
     [allHoldings]
   );
 
+  // Connection status indicator
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case "connected": return "🟢";
+      case "connecting": return "🟡";
+      case "reconnecting": return "🟡";
+      case "disconnected": return "🔴";
+      case "error": return "🔴";
+      default: return "⚪";
+    }
+  };
+
+  const getStatusText = () => {
+    switch (connectionStatus) {
+      case "connected": return "Live";
+      case "connecting": return "Connecting";
+      case "reconnecting": return "Reconnecting";
+      case "disconnected": return "Offline";
+      case "error": return "Error";
+      default: return "Unknown";
+    }
+  };
+
   // Loading state
   if (loading && allHoldings.length === 0) {
     return (
@@ -140,6 +187,8 @@ const Holdings = () => {
         <p style={{ marginTop: "20px" }}>
           {connectionStatus === "connecting" 
             ? "Connecting to live data..." 
+            : connectionStatus === "reconnecting"
+            ? "Reconnecting to server..."
             : "Fetching live stock data..."}
         </p>
         <p style={{ fontSize: "12px", color: "#666", marginTop: "10px" }}>
@@ -177,7 +226,7 @@ const Holdings = () => {
       <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>
         <p>Waiting for holdings data...</p>
         <p style={{ fontSize: "12px", marginTop: "10px" }}>
-          {connectionStatus === "connected" ? "🟢 Connected" : "🔴 Disconnected"}
+          {getStatusColor()} {getStatusText()}
         </p>
       </div>
     );
@@ -197,7 +246,7 @@ const Holdings = () => {
         <h3 className="title">Holdings ({allHoldings.length})</h3>
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
           <span style={{ fontSize: "12px", color: "#666" }}>
-            {formatLastUpdated()} • {connectionStatus === "connected" ? "🟢 Live" : "🔴 Offline"}
+            {formatLastUpdated()} • {getStatusColor()} {getStatusText()}
           </span>
         </div>
       </div>
