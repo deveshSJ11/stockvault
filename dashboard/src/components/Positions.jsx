@@ -1,17 +1,111 @@
-import React, { useState } from "react";
-import { useSocket } from "../hooks/useSocket";
+import React, { useState, useEffect } from "react";
+import { io } from "socket.io-client";
 
 const Positions = () => {
   const [allPositions, setAllPositions] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Use custom hook to get live positions
-  const { status: connectionStatus } = useSocket("updatePositions", (data) => {
-    setAllPositions(data);
-    setLastUpdated(new Date());
-  });
+  useEffect(() => {
+    // Get backend URL from environment variable
+    const backendUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE;
+    
+    if (!backendUrl) {
+      console.error("❌ VITE_API_BASE or VITE_SOCKET_URL is not defined. Check your .env file");
+      setConnectionStatus("error");
+      setError("Configuration error: Backend URL not found");
+      setLoading(false);
+      return;
+    }
 
-  // Format last updated time
+    console.log("🔌 Connecting to Socket.IO at:", backendUrl);
+
+    // Connect to backend Socket.IO with production-ready configuration
+    const socket = io(backendUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      timeout: 20000,
+      autoConnect: true,
+      withCredentials: true,
+      forceNew: false,
+      upgrade: true,
+      secure: true // Required for HTTPS connections
+    });
+
+    // Connection events
+    socket.on("connect", () => {
+      console.log("✅ Socket.IO connected for Positions | ID:", socket.id);
+      console.log("🔌 Transport:", socket.io.engine.transport.name);
+      setConnectionStatus("connected");
+      setLoading(false);
+      setError(null);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("🔌 Socket.IO disconnected from Positions | Reason:", reason);
+      setConnectionStatus("disconnected");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Socket.IO connection error:", err);
+      console.log("Current transport:", socket.io.engine?.transport?.name || 'none');
+      console.log("Backend URL:", backendUrl);
+      setConnectionStatus("error");
+      setError(`Connection failed: ${err.message}`);
+      setLoading(false);
+    });
+
+    socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}...`);
+      setConnectionStatus("reconnecting");
+    });
+
+    socket.on("reconnect", (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+      setConnectionStatus("connected");
+      setError(null);
+    });
+
+    // Listen for transport upgrade
+    socket.io.engine.on("upgrade", (transport) => {
+      console.log("⬆️ Transport upgraded to:", transport.name);
+    });
+
+    // Listen for live position updates
+    socket.on("updatePositions", (data) => {
+      console.log("📊 Positions updated via Socket.IO:", data.length, "positions");
+      
+      // Transform and validate data
+      const safeData = data.map((position) => ({
+        product: position.product || "-",
+        name: position.name || "-",
+        qty: Number(position.qty) || 0,
+        avg: Number(position.avg) || 0,
+        price: Number(position.price) || 0,
+        net: position.net || "-",
+        day: position.day || "-",
+        isLoss: position.isLoss || false
+      }));
+
+      setAllPositions(safeData);
+      setLastUpdated(new Date());
+      setLoading(false);
+      setError(null);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      console.log("🔌 Disconnecting Socket.IO for Positions");
+      socket.disconnect();
+    };
+  }, []);
+
   const formatLastUpdated = () => {
     if (!lastUpdated) return '';
     const now = new Date();
@@ -44,21 +138,23 @@ const Positions = () => {
     }
   };
 
-  const totalPnL = allPositions.reduce((sum, stock) => {
-    return sum + (stock.price - stock.avg) * stock.qty;
+  const totalPnL = allPositions.reduce((sum, position) => {
+    return sum + (position.price - position.avg) * position.qty;
   }, 0);
 
-  // Loading or reconnecting
-  if (connectionStatus === "connecting" || connectionStatus === "reconnecting") {
+  // Loading state
+  if (loading && allPositions.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Connecting...</span>
+          <span className="visually-hidden">Loading...</span>
         </div>
         <p style={{ marginTop: "20px" }}>
           {connectionStatus === "connecting" 
             ? "Connecting to live data..." 
-            : "Reconnecting to server..."}
+            : connectionStatus === "reconnecting"
+            ? "Reconnecting to server..."
+            : "Fetching live position data..."}
         </p>
         <p style={{ fontSize: "12px", color: "#666", marginTop: "10px" }}>
           Status: {connectionStatus}
@@ -67,15 +163,17 @@ const Positions = () => {
     );
   }
 
-  // Error state when no data
-  if (connectionStatus === "error" && !allPositions.length) {
+  // Error state
+  if (error && allPositions.length === 0) {
     return (
       <div style={{ textAlign: "center", padding: "50px" }}>
         <div style={{ color: "#d9534f", marginBottom: "20px" }}>
           <i className="fa fa-exclamation-circle" style={{ fontSize: "48px" }}></i>
         </div>
-        <h4>Connection Error</h4>
-        <p>Failed to connect to live data server.</p>
+        <h4>{error}</h4>
+        <p style={{ fontSize: "12px", color: "#666", marginTop: "10px" }}>
+          Status: {connectionStatus}
+        </p>
         <button 
           className="btn btn-primary btn-blue" 
           onClick={() => window.location.reload()}
@@ -87,7 +185,7 @@ const Positions = () => {
     );
   }
 
-  // Empty state
+  // Empty state (still connected but no data)
   if (!allPositions.length && connectionStatus === "connected") {
     return (
       <div style={{ textAlign: "center", padding: "50px", color: "#666" }}>
@@ -134,19 +232,20 @@ const Positions = () => {
             </tr>
           </thead>
           <tbody>
-            {allPositions.map((stock, index) => {
-              const pnl = (stock.price - stock.avg) * stock.qty;
+            {allPositions.map((position, index) => {
+              const pnl = (position.price - position.avg) * position.qty;
               const profClass = pnl >= 0 ? "profit" : "loss";
-              const dayClass = stock.day && stock.day.startsWith('+') ? "profit" : "loss";
+              const dayClass = position.day && position.day.startsWith('+') ? "profit" : "loss";
+              
               return (
                 <tr key={index}>
-                  <td>{stock.product}</td>
-                  <td>{stock.name}</td>
-                  <td>{stock.qty}</td>
-                  <td>{stock.avg.toFixed(2)}</td>
-                  <td>{stock.price.toFixed(2)}</td>
+                  <td>{position.product}</td>
+                  <td>{position.name}</td>
+                  <td>{position.qty}</td>
+                  <td>{position.avg.toFixed(2)}</td>
+                  <td>{position.price.toFixed(2)}</td>
                   <td className={profClass}>{pnl.toFixed(2)}</td>
-                  <td className={dayClass}>{stock.day}</td>
+                  <td className={dayClass}>{position.day}</td>
                 </tr>
               );
             })}

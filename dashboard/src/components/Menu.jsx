@@ -20,7 +20,12 @@ const Menu = () => {
     <div className="menu-container">
       <div className="brand">
         <div className="logo">SV</div>
-        <rect width="40" height="40" rx="8" fill="#14b8a6"/>
+
+        {/* Proper SVG rectangle */}
+        <svg width="40" height="40" style={{ display: "inline-block", marginLeft: "8px" }}>
+        
+        </svg>
+
         <span className="brand-name">StockVault</span>
       </div>
 
@@ -98,34 +103,32 @@ const Menu = () => {
       <div className="profile" onClick={handleProfileClick}>
         <div className="avatar"> U</div>
         <p className="username">User</p>
-        
-        {isProfileOpen && (
-  <div className="profile-dropdown">
-    <div className="dropdown-item">
-      <span>👤</span> My Profile
-    </div>
-    <div className="dropdown-item">
-      <span>⚙️</span> Settings
-    </div>
-    <div className="dropdown-item">
-      <span>💳</span> Billing
-    </div>
-    <hr className="dropdown-divider" />
-    <div className="dropdown-item logout">
-      <Link 
-        to="http://localhost:5174/"
-        onClick={() => {
-          localStorage.removeItem("token"); // clear login info
-        }}
-        style={{ textDecoration: "none", color: "inherit" }}
-      >
-        <span>🚪</span> Logout
-      </Link>
-    </div>
-  </div>
-)}
 
-      
+        {isProfileOpen && (
+          <div className="profile-dropdown">
+            <div className="dropdown-item">
+              <span>👤</span> My Profile
+            </div>
+            <div className="dropdown-item">
+              <span>⚙️</span> Settings
+            </div>
+            <div className="dropdown-item">
+              <span>💳</span> Billing
+            </div>
+            <hr className="dropdown-divider" />
+            <div className="dropdown-item logout">
+              <Link 
+                to="http://localhost:5174/"
+                onClick={() => {
+                  localStorage.removeItem("token"); // clear login info
+                }}
+                style={{ textDecoration: "none", color: "inherit" }}
+              >
+                <span>🚪</span> Logout
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
