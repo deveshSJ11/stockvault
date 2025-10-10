@@ -27,7 +27,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
       'http://localhost:5173',
       'https://localhost:3000',
       'https://localhost:5173',
-      'https://main.d31wkgvjp4a2zm.amplifyapp.com'
+      'https://main.d39p45abwbdyp1.amplifyapp.com'
     ];
 
 console.log('='.repeat(50));
