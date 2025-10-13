@@ -20,11 +20,12 @@ function Footer() {
               <span className="ms-2 fw-bold fs-5" style={{ color: "#14b8a6" }}>StockVault</span>
             </div>
             <p className="text-muted small mb-3">
-              A full-stack trading platform demo showcasing modern web development with MERN stack, real-time data visualization, and secure authentication.
+             A full-stack trading platform demo offering comprehensive stock portfolio management with 
+             live market data integration. Track your holdings in real-time, monitor positions with automatic
+              P&L calculations, execute buy/sell orders instantly, and visualize your portfolio performance 
+             through interactive charts. Secure authentication ensures your trading data remains protected.
             </p>
-            <p className="text-muted small mb-0">
-              <strong>Educational Project</strong> - Built for portfolio demonstration purposes.
-            </p>
+             
             <p className="text-muted small">
               © 2025 StockVault Demo. Personal Project.
             </p>
@@ -111,9 +112,7 @@ function Footer() {
               <p className="mb-2">
                 <strong>No Real Trading:</strong> All data shown is simulated or uses publicly available market data APIs for demonstration purposes only. No real money, securities, or financial transactions are involved.
               </p>
-              <p className="mb-0">
-                <strong>Technology Showcase:</strong> This project demonstrates proficiency in full-stack development, including secure authentication (JWT), real-time data visualization (Chart.js), database management (MongoDB), RESTful API design (Express.js), modern frontend development (React.js), testing (Jest), and cloud deployment (AWS).
-              </p>
+              
             </div>
           </div>
         </div>

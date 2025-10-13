@@ -1,6 +1,4 @@
-
-
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import Hero from "./Hero";
 import Awards from "./Awards";
 import Stats from "./Stats";
@@ -11,13 +9,39 @@ import Navbar from "../Navbar";
 import Footer from "../Footer";
 
 function HomePage() {
+  const observerRef = useRef(null);
+  const tickingRef = useRef(false);
+  const navbarRef = useRef(null);
+
+  // Optimized scroll handler with RAF throttling
+  const handleScroll = useCallback(() => {
+    if (!tickingRef.current) {
+      window.requestAnimationFrame(() => {
+        const navbar = navbarRef.current || document.querySelector('.navbar');
+        if (navbar) {
+          navbar.classList.toggle('navbar-scrolled', window.scrollY > 50);
+        }
+        tickingRef.current = false;
+      });
+      tickingRef.current = true;
+    }
+  }, []);
+
   useEffect(() => {
-    // Initialize scroll animations
-    const observer = new IntersectionObserver(
+    // Store navbar reference
+    navbarRef.current = document.querySelector('.navbar');
+
+    // Optimized Intersection Observer with performance settings
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('animate-in');
+            // Use RAF for smoother animation triggering
+            requestAnimationFrame(() => {
+              entry.target.classList.add('animate-in');
+            });
+            // Unobserve after animation to reduce observer workload
+            observerRef.current?.unobserve(entry.target);
           }
         });
       },
@@ -27,27 +51,21 @@ function HomePage() {
       }
     );
 
+    // Observe all animated elements
     const animatedElements = document.querySelectorAll('.scroll-animate');
-    animatedElements.forEach((el) => observer.observe(el));
+    animatedElements.forEach((el) => observerRef.current?.observe(el));
 
-    // Navbar scroll effect
-    const navbar = document.querySelector('.navbar');
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        navbar?.classList.add('navbar-scrolled');
-      } else {
-        navbar?.classList.remove('navbar-scrolled');
-      }
-    };
+    // Passive scroll listener for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
-    window.addEventListener('scroll', handleScroll);
-
-    // Cleanup
+    // Cleanup function
     return () => {
-      observer.disconnect();
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [handleScroll]);
 
   return (
     <>
@@ -58,7 +76,6 @@ function HomePage() {
       <Pricing />
       <Education />
       <OpenAccount />
-     
     </>
   );
 }

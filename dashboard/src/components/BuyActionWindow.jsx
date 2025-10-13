@@ -9,8 +9,7 @@ const BuyActionWindow = ({ uid }) => {
   const [stockQuantity, setStockQuantity] = useState("");
   const [stockPrice, setStockPrice] = useState("");
   const [livePrice, setLivePrice] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingType, setLoadingType] = useState(null); // Track which button is loading
+  const [loadingType, setLoadingType] = useState(null); // Track which button is loading: 'BUY' | 'SELL' | null
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -79,7 +78,8 @@ const BuyActionWindow = ({ uid }) => {
       return;
     }
 
-    setLoading(true);
+    setLoadingType(mode); // Set which button is loading
+    
     try {
       await createOrder({
         name: uid,
@@ -88,22 +88,20 @@ const BuyActionWindow = ({ uid }) => {
         mode,
       });
       
-      // FIX: Show notification BEFORE closing window
       const totalValue = (qty * price).toFixed(2);
       showNotification(
         `${mode} order placed successfully! ${qty} shares of ${uid} at ₹${price.toFixed(2)} (Total: ₹${totalValue})`,
         "success"
       );
       
-      // Close window after a short delay to show notification
+      // Close window after showing notification
       setTimeout(() => {
         closeBuyWindow();
       }, 1500);
     } catch (err) {
       console.error(`Error placing ${mode} order:`, err);
       showNotification("Failed to place order. Please try again.", "error");
-    } finally {
-      setLoading(false);
+      setLoadingType(null); // Reset loading state on error
     }
   };
 
@@ -154,7 +152,7 @@ const BuyActionWindow = ({ uid }) => {
                 inputMode="numeric"
                 value={stockQuantity}
                 onChange={handleQuantityChange}
-                disabled={loading}
+                disabled={loadingType !== null}
                 placeholder="0"
               />
             </fieldset>
@@ -165,7 +163,7 @@ const BuyActionWindow = ({ uid }) => {
                 inputMode="decimal"
                 value={stockPrice}
                 onChange={handlePriceChange}
-                disabled={loading}
+                disabled={loadingType !== null}
                 placeholder="0.00"
               />
             </fieldset>
@@ -176,23 +174,35 @@ const BuyActionWindow = ({ uid }) => {
           <span>Margin required ₹{marginRequired}</span>
           <div className="button-group">
             <button
-              className="btn btn-blue"
+              className="btn btn-buy"
               onClick={handleBuyClick}
-              disabled={loading}
+              disabled={loadingType !== null}
             >
-              {loading ? "Processing..." : "Buy"}
+              {loadingType === "BUY" ? (
+                <>
+                  <i className="fa fa-spinner fa-spin"></i> Processing...
+                </>
+              ) : (
+                "Buy"
+              )}
             </button>
             <button
               className="btn btn-sell"
               onClick={handleSellClick}
-              disabled={loading}
+              disabled={loadingType !== null}
             >
-              {loading ? "Processing..." : "Sell"}
+              {loadingType === "SELL" ? (
+                <>
+                  <i className="fa fa-spinner fa-spin"></i> Processing...
+                </>
+              ) : (
+                "Sell"
+              )}
             </button>
             <button
               className="btn btn-grey"
               onClick={handleCancelClick}
-              disabled={loading}
+              disabled={loadingType !== null}
             >
               Cancel
             </button>

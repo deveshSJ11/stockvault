@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { io } from "socket.io-client";
 import { getAllOrders, deleteOrder } from "../services/ApiService";
 
 const Orders = () => {
@@ -9,24 +10,122 @@ const Orders = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("connecting");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Fetch orders
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getAllOrders();
-      setAllOrders(data);
-    } catch (err) {
-      setError('Failed to fetch orders. Please try again.');
-      console.error('Error fetching orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // FETCH INITIAL ORDERS FROM API
   useEffect(() => {
-    fetchOrders();
+    const fetchInitialOrders = async () => {
+      try {
+        setLoading(true);
+        const orders = await getAllOrders();
+        console.log("📦 Initial orders fetched:", orders);
+        
+        // Transform orders data
+        const transformedOrders = orders.map(order => ({
+          _id: order._id,
+          name: order.name || "-",
+          qty: Number(order.qty) || 0,
+          price: Number(order.price) || 0,
+          mode: order.mode || "-"
+        }));
+        
+        setAllOrders(transformedOrders);
+        setLastUpdated(new Date());
+        setError(null);
+      } catch (err) {
+        console.error("❌ Error fetching initial orders:", err);
+        setError("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialOrders();
+  }, []);
+
+  // SETUP SOCKET.IO FOR REAL-TIME UPDATES
+  useEffect(() => {
+    const backendUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_BASE;
+    
+    if (!backendUrl) {
+      console.error("❌ VITE_API_BASE or VITE_SOCKET_URL is not defined");
+      setConnectionStatus("error");
+      return;
+    }
+
+    console.log("🔌 Connecting to Socket.IO at:", backendUrl);
+
+    const socket = io(backendUrl, {
+      path: '/socket.io',
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      timeout: 20000,
+      autoConnect: true,
+      withCredentials: true,
+      forceNew: false,
+      upgrade: true,
+      secure: true
+    });
+
+    socket.on("connect", () => {
+      console.log("✅ Socket.IO connected | ID:", socket.id);
+      setConnectionStatus("connected");
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.log("🔌 Socket.IO disconnected | Reason:", reason);
+      setConnectionStatus("disconnected");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("❌ Socket.IO connection error:", err);
+      setConnectionStatus("error");
+    });
+
+    socket.on("reconnect_attempt", (attemptNumber) => {
+      console.log(`🔄 Reconnection attempt ${attemptNumber}...`);
+      setConnectionStatus("reconnecting");
+    });
+
+    socket.on("reconnect", (attemptNumber) => {
+      console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+      setConnectionStatus("connected");
+    });
+
+    socket.io.engine.on("upgrade", (transport) => {
+      console.log("⬆️ Transport upgraded to:", transport.name);
+    });
+
+    // Listen for new orders from buy/sell actions
+    socket.on("buyandsell", (data) => {
+      console.log("📊 Socket.IO order update received:", data);
+      
+      if (data.type === "new_order" && data.order) {
+        const newOrder = {
+          _id: data.order._id,
+          name: data.order.name || "-",
+          qty: Number(data.order.qty) || 0,
+          price: Number(data.order.price) || 0,
+          mode: data.order.mode || "-"
+        };
+
+        setAllOrders(prevOrders => [newOrder, ...prevOrders]);
+        setLastUpdated(new Date());
+        showNotification(`New ${newOrder.mode} order added for ${newOrder.name}!`, "success");
+      } else if (data.type === "order_deleted" && data.orderId) {
+        setAllOrders(prevOrders => prevOrders.filter(order => order._id !== data.orderId));
+        setLastUpdated(new Date());
+      }
+    });
+
+    return () => {
+      console.log("🔌 Disconnecting Socket.IO");
+      socket.disconnect();
+    };
   }, []);
 
   const showNotification = (message, type = "success") => {
@@ -34,7 +133,38 @@ const Orders = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Handle delete order
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return "";
+    const now = new Date();
+    const diff = Math.floor((now - lastUpdated) / 1000);
+    
+    if (diff < 60) return `Updated ${diff}s ago`;
+    if (diff < 3600) return `Updated ${Math.floor(diff / 60)}m ago`;
+    return `Updated at ${lastUpdated.toLocaleTimeString()}`;
+  };
+
+  const getStatusColor = () => {
+    switch (connectionStatus) {
+      case "connected": return "🟢";
+      case "connecting": return "🟡";
+      case "reconnecting": return "🟡";
+      case "disconnected": return "🔴";
+      case "error": return "🔴";
+      default: return "⚪";
+    }
+  };
+
+  const getStatusText = () => {
+    switch (connectionStatus) {
+      case "connected": return "Live";
+      case "connecting": return "Connecting";
+      case "reconnecting": return "Reconnecting";
+      case "disconnected": return "Offline";
+      case "error": return "Error";
+      default: return "Unknown";
+    }
+  };
+
   const handleDelete = async (orderId) => {
     try {
       setDeletingId(orderId);
@@ -54,11 +184,11 @@ const Orders = () => {
   // Loading state
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
+      <div style={{ textAlign: "center", padding: "50px" }}>
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-        <p style={{ marginTop: '20px' }}>Loading orders...</p>
+        <p style={{ marginTop: "20px" }}>Fetching orders...</p>
       </div>
     );
   }
@@ -66,33 +196,45 @@ const Orders = () => {
   // Error state
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '50px' }}>
-        <div style={{ color: '#d9534f', marginBottom: '20px' }}>
-          <i className="fa fa-exclamation-circle" style={{ fontSize: '48px' }}></i>
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <div style={{ color: "#d9534f", marginBottom: "20px" }}>
+          <i className="fa fa-exclamation-circle" style={{ fontSize: "48px" }}></i>
         </div>
         <h4>{error}</h4>
-        <button className="btn btn-primary .bth-blue" onClick={fetchOrders}>
+        <button 
+          className="btn btn-primary btn-blue" 
+          onClick={() => window.location.reload()}
+          style={{ marginTop: "20px" }}
+        >
           Retry
         </button>
       </div>
     );
   }
 
-  // Empty state - No orders
+  // Empty state
   if (allOrders.length === 0) {
     return (
       <div className="orders">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+          <h3 className="title">Orders (0)</h3>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <span style={{ fontSize: "12px", color: "#666" }}>
+              {getStatusColor()} {getStatusText()}
+            </span>
+          </div>
+        </div>
         <div className="no-orders">
-          <p>You haven't placed any orders today</p>
+          <p>You haven't placed any orders yet</p>
           <Link to={"/"} className="btn">
-            Get started
+            Place an order
           </Link>
         </div>
       </div>
     );
   }
 
-  // Calculate order statistics
+  // Calculate statistics
   const buyOrders = allOrders.filter(order => order.mode === 'BUY');
   const sellOrders = allOrders.filter(order => order.mode === 'SELL');
   const totalBuyValue = buyOrders.reduce((sum, order) => sum + (order.price * order.qty), 0);
@@ -124,7 +266,7 @@ const Orders = () => {
             </div>
             <div className="modal-body">
               <p>Are you sure you want to delete this order?</p>
-              <p style={{ fontSize: '13px', color: '#999', marginTop: '12px' }}>
+              <p style={{ fontSize: "13px", color: "#999", marginTop: "12px" }}>
                 This action cannot be undone.
               </p>
             </div>
@@ -148,39 +290,41 @@ const Orders = () => {
       )}
 
       <div className="orders">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 className="title">Orders ({allOrders.length})</h3>
-          <button className="btn btn-sm btn-outline-primary btn-blue" onClick={fetchOrders}>
-            <i className="fa fa-refresh"></i> Refresh
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <span style={{ fontSize: "12px", color: "#666" }}>
+              {formatLastUpdated()} • {getStatusColor()} {getStatusText()}
+            </span>
+          </div>
         </div>
 
         {/* Order Statistics */}
         <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '15px', 
-          marginBottom: '25px' 
+          display: "grid", 
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
+          gap: "15px", 
+          marginBottom: "25px" 
         }}>
           <div style={{ 
-            padding: '15px', 
-            backgroundColor: '#e7f3ff', 
-            borderRadius: '8px',
-            textAlign: 'center'
+            padding: "15px", 
+            backgroundColor: "#e7f3ff", 
+            borderRadius: "8px",
+            textAlign: "center"
           }}>
-            <h5 style={{ color: '#0066cc', margin: 0 }}>{buyOrders.length}</h5>
-            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Buy Orders</p>
-            <small style={{ color: '#666' }}>₹{totalBuyValue.toFixed(2)}</small>
+            <h5 style={{ color: "#0066cc", margin: 0 }}>{buyOrders.length}</h5>
+            <p style={{ margin: "5px 0 0 0", fontSize: "14px" }}>Buy Orders</p>
+            <small style={{ color: "#666" }}>₹{totalBuyValue.toFixed(2)}</small>
           </div>
           <div style={{ 
-            padding: '15px', 
-            backgroundColor: '#fff3e0', 
-            borderRadius: '8px',
-            textAlign: 'center'
+            padding: "15px", 
+            backgroundColor: "#fff3e0", 
+            borderRadius: "8px",
+            textAlign: "center"
           }}>
-            <h5 style={{ color: '#ff9800', margin: 0 }}>{sellOrders.length}</h5>
-            <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>Sell Orders</p>
-            <small style={{ color: '#666' }}>₹{totalSellValue.toFixed(2)}</small>
+            <h5 style={{ color: "#ff9800", margin: 0 }}>{sellOrders.length}</h5>
+            <p style={{ margin: "5px 0 0 0", fontSize: "14px" }}>Sell Orders</p>
+            <small style={{ color: "#666" }}>₹{totalSellValue.toFixed(2)}</small>
           </div>
         </div>
 

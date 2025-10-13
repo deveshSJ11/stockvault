@@ -185,6 +185,7 @@
   border-radius: 3px;
   padding: 0;
   margin: 0;
+  transition: border-color 0.2s ease;
 }
 
 .inputs fieldset legend {
@@ -218,7 +219,7 @@
   cursor: pointer;
 }
 
-/* ==================== BUTTON STYLES - FIXED ==================== */
+/* ==================== IMPROVED BUTTON STYLES (MATCHING ORDERS) ==================== */
 .buttons {
   width: 100%;
   box-sizing: border-box;
@@ -230,12 +231,12 @@
   border-top: 1px solid #eee;
 }
 
-.buttons span {
+.buttons > span {
   font-size: 0.8rem;
   color: #666;
+  text-align: center;
 }
 
-/* FIX: Keep button-group together and centered */
 .button-group {
   display: flex;
   gap: 8px;
@@ -245,53 +246,103 @@
 
 .btn {
   border: none;
-  padding: 8px 20px;
-  border-radius: 2px;
+  padding: 10px 20px;
+  border-radius: 4px;
   color: #fff;
   font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   white-space: nowrap;
   flex: 0 0 auto;
-  min-width: 70px;
+  min-width: 90px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
-.btn-blue {
+/* Buy Button - Matching Orders style */
+.btn-buy {
   background: #4184f3;
+  border: 1px solid transparent;
 }
 
-.btn-blue:hover:not(:disabled) {
+.btn-buy:hover:not(:disabled) {
   background: #5a95f5;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(65, 132, 243, 0.3);
 }
 
+.btn-buy:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(65, 132, 243, 0.3);
+}
+
+/* Sell Button - Matching Orders style */
 .btn-sell {
   background: #ff5722;
   color: white;
+  border: 1px solid transparent;
 }
 
 .btn-sell:hover:not(:disabled) {
   background: #f4511e;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
 }
 
+.btn-sell:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(255, 87, 34, 0.3);
+}
+
+/* Cancel/Grey Button - Matching Orders style */
 .btn-grey {
-  background: #d4d4d4;
-  color: #666666;
+  background: #e0e0e0;
+  color: #666;
+  border: 1px solid transparent;
 }
 
 .btn-grey:hover:not(:disabled) {
-  background: #bbb;
-  color: #fff;
+  background: #d0d0d0;
+  color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+.btn-grey:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled state - Matching Orders style */
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Spinner icon styling */
+.btn .fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==================== FOCUS & INPUT STATES ==================== */
 .inputs fieldset:focus-within {
   outline: none;
   border: 1px solid #4184f3;
+  box-shadow: 0 0 0 2px rgba(65, 132, 243, 0.1);
 }
 
 .inputs fieldset input:focus {
@@ -332,5 +383,23 @@
   }
   to {
     width: 0%;
+  }
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 480px) {
+  .container {
+    width: 90%;
+    max-width: 350px;
+  }
+  
+  .button-group {
+    flex-wrap: wrap;
+  }
+  
+  .btn {
+    min-width: 80px;
+    padding: 8px 16px;
+    font-size: 0.8rem;
   }
 }

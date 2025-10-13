@@ -118,7 +118,7 @@ const Menu = () => {
             <hr className="dropdown-divider" />
             <div className="dropdown-item logout">
               <Link 
-                to="http://localhost:5174/"
+                to="http://localhost:5174/,https://main.d396oielaum726.amplifyapp.com/"
                 onClick={() => {
                   localStorage.removeItem("token"); // clear login info
                 }}
