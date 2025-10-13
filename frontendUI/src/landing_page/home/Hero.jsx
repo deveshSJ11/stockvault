@@ -35,7 +35,7 @@ function Hero() {
             <p className="scroll-animate stagger-3 mb-4 fs-5" style={{ color: "#64748b", maxWidth: "600px", margin: "0 auto" }}>
               A modern trading platform demonstrating real-time market analytics, secure authentication, and intelligent portfolio management
             </p>
-            <div className=" scroll-animate scale-in stagger-1">
+            <div className=" scroll-animate scale-in stagger-2">
                 
                 <Link to="/signup" className="btn btn-primary btn-lg px-5 py-3 mt-3">
                   Explore Demo <i className="fas fa-arrow-right ms-2"></i>

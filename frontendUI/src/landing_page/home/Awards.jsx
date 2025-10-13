@@ -48,7 +48,7 @@ function Awards() {
         </div>
 
         {/* Right - Quick Stats with Floating Cards */}
-        <div className="col-12 col-md-6 p-5 position-relative">
+        <div className="col-12 col-md-6 p-5 position-relative scroll-animate stagger-2">
           {/* Floating Cards */}
           <div className="awards-floating-card card-1">
             <i className="fas fa-trophy"></i>
