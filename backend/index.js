@@ -303,6 +303,34 @@ const positionsInterval = setInterval(async () => {
   }
 }, 5000);
 
+app.post("/newOrder", async (req, res) => {
+  try {
+    const { name, qty, price, mode } = req.body;
+    // ... validation ...
+
+    const newOrder = new OrdersModel({
+      name: name.toUpperCase(),
+      qty: parseInt(qty),
+      price: parseFloat(price),
+      mode: mode.toUpperCase(),
+    });
+
+    await newOrder.save();
+    console.log('✓ Order saved successfully');
+    
+    // ✅ ADD THIS - Emit new order to all connected clients
+    io.emit("buyandsell", {
+      type: "new_order",
+      order: newOrder
+    });
+    
+    res.status(201).json({ message: "Order saved successfully!", order: newOrder });
+  } catch (error) {
+    console.error("❌ Error saving order:", error.message);
+    res.status(500).json({ error: "Failed to save order", message: error.message });
+  }
+});
+
 // ==============================
 // START SERVER
 // ==============================
