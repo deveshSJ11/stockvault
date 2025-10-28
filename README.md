@@ -333,6 +333,6 @@ For support, email deveshjaiswal1212@gmail.com or create an issue in the reposit
 
 **⭐ Star this repo if you find it helpful!**
 
-Made with ❤️ by [Dev Jaiswal](https://github.com/yourusername)
+Made with ❤️ by [Devesh Jaiswal](https://github.com/deveshSJ11)
 
 </div>
