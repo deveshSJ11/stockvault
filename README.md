@@ -2,7 +2,7 @@
 
 > A full-stack real-time stock trading platform with live market data, portfolio management, and order execution capabilities.
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://main.d31wkgvjp4a2zm.amplifyapp.com)
+[![Live](https://img.shields.io/badge/Demo-Live-success?style=for-the-badge)](https://main.d31wkgvjp4a2zm.amplifyapp.com)
 [![LDashboard Page](https://img.shields.io/badge/Landing-Visit-blue?style=for-the-badge)](https://main.d396oielaum726.amplifyapp.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
