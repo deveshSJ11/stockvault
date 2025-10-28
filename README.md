@@ -133,7 +133,7 @@ Real-Time UI Update (🟢 Live Indicator)
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/stockvault.git
+git clone https://github.com/deveshSJ11/stockvault.git
 cd stockvault
 ```
 
@@ -549,7 +549,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 - 📧 Email: [deveshjaiswal1212@gmail.com](mailto:deveshjaiswal1212@gmail.com)
 - 💼 LinkedIn: [Connect with me](https://www.linkedin.com/in/deveshjaiswal11/)
 - 🌐 Portfolio: [Visit my website](https://deveshsj-portfolio.netlify.app/)
-- 🐙 GitHub: [@devjaiswal](https://github.com/deveshSJ11)
+- 🐙 GitHub: [@deveshSJ11](https://github.com/deveshSJ11)
 
 ---
 
