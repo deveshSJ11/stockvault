@@ -20,14 +20,14 @@ const MONGO_URI = process.env.MONGO_URL;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Get allowed origins from environment or use defaults
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
+
+    const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
   : [
       'http://localhost:3000',
       'http://localhost:5173',
-      'https://localhost:3000',
-      'https://localhost:5173',
-      'https://main.d39p45abwbdyp1.amplifyapp.com'
+      'https://main.d39p45abwbdyp1.amplifyapp.com',  // ✅ Add this
+      'https://main.d31wkgvjp4a2zm.amplifyapp.com'   // ✅ Your dashboard URL
     ];
 
 console.log('='.repeat(50));
@@ -140,7 +140,6 @@ app.get("/searchStock", async (req, res) => {
   }
 });
 
-
 app.get("/stockData/:symbol", async (req, res) => {
   try {
     const { symbol } = req.params;
@@ -148,26 +147,26 @@ app.get("/stockData/:symbol", async (req, res) => {
     
     const stockData = await fetchLiveStockData(symbol);
 
-    // ALWAYS return data, even if it's fallback
+    // ALWAYS return valid data, never null
     if (!stockData) {
-      // If no fallback data exists, create a basic one
+      console.warn(`⚠️ No data for ${symbol}, returning generic fallback`);
       return res.json({
         symbol: symbol,
         regularMarketPrice: 100.00,
         regularMarketPreviousClose: 99.00,
         shortName: symbol,
-        isFallback: true,
-        error: 'Live data unavailable'
+        isFallback: true
       });
     }
 
-    // Return the data (whether live or fallback)
+    // Return the data (live or fallback)
+    console.log(`✓ Returning data for ${symbol}:`, stockData);
     res.json(stockData);
     
   } catch (error) {
     console.error("❌ Error fetching stock data:", error.message);
     
-    // Don't return 500 error - return fallback instead
+    // Return fallback on error (don't throw 500)
     res.json({
       symbol: req.params.symbol,
       regularMarketPrice: 100.00,
