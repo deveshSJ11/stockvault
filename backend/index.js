@@ -140,18 +140,42 @@ app.get("/searchStock", async (req, res) => {
   }
 });
 
+
 app.get("/stockData/:symbol", async (req, res) => {
   try {
     const { symbol } = req.params;
     console.log('📈 Fetching stock data for:', symbol);
+    
     const stockData = await fetchLiveStockData(symbol);
 
-    if (!stockData) return res.status(404).json({ error: "Stock not found" });
+    // ALWAYS return data, even if it's fallback
+    if (!stockData) {
+      // If no fallback data exists, create a basic one
+      return res.json({
+        symbol: symbol,
+        regularMarketPrice: 100.00,
+        regularMarketPreviousClose: 99.00,
+        shortName: symbol,
+        isFallback: true,
+        error: 'Live data unavailable'
+      });
+    }
 
+    // Return the data (whether live or fallback)
     res.json(stockData);
+    
   } catch (error) {
     console.error("❌ Error fetching stock data:", error.message);
-    res.status(500).json({ error: "Failed to fetch stock data", message: error.message });
+    
+    // Don't return 500 error - return fallback instead
+    res.json({
+      symbol: req.params.symbol,
+      regularMarketPrice: 100.00,
+      regularMarketPreviousClose: 99.00,
+      shortName: req.params.symbol,
+      isFallback: true,
+      error: 'Service temporarily unavailable'
+    });
   }
 });
 
