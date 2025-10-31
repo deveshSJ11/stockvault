@@ -185,7 +185,7 @@ const Signup = () => {
             )}
           </div>
 
-          <a href="https://main.d39p45abwbdyp1.amplifyapp.com/">
+          <a href="http://localhost:5173/">
   <button
     type="button"
     className="btn-signup"
